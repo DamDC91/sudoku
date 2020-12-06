@@ -1,0 +1,6 @@
+project main is
+    for source_dirs use ("src");
+    for object_dir use "obj";
+    for exec_dir use "bin";
+    for Main use ("main.adb");
+end main;
