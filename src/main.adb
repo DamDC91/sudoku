@@ -156,6 +156,60 @@ procedure main is
         return true; -- if everything goes well
     end Generate_Grid;
 
+
+    function Resolve_Grid(g : in out grid) return boolean 
+    is
+        function  Get_Number(p : Possible_Nb) return Number
+        is
+            i : Number:=1;
+        begin
+            for e of p loop
+                if e then
+                    return i;
+                end if;
+                if i=9 then
+                    raise Constraint_Error;
+                else
+                    i:=i+1;
+                end if;
+            end loop;
+            return 1; -- never reached
+        end Get_Number;
+
+        Input_G : grid:=g;
+        changed : Boolean:=True;
+        X_square :  Number;
+        Y_square : Number;
+        Nb_Of_Possibility : Natural;
+        Possible_Numbers : Possible_Nb;
+    begin
+       while Changed loop -- if we have found a Cell that can be played we search for another Cell that can be played
+           Changed:=False;
+           for y in 1..9 loop
+               for x in 1..9 loop
+                   if not G(y)(x).Visible then
+                       X_square :=((x-1)/3)*3+1;
+                       Y_square :=((y-1)/3)*3+1; 
+                       Possible_Numbers:=Find_Possible_Nb(G,x,y,X_square,Y_square,Nb_Of_Possibility);
+                       if Nb_Of_Possibility=1 then
+                           G(y)(x):=(Nb=>Get_Number(Possible_Numbers),Visible=>True);
+                           Changed:=True;
+                        end if;
+                    end if;
+                end loop;
+            end loop;
+        end loop;
+        return True;
+
+    exception 
+        when Constraint_Error =>
+            g:=Input_G;
+            Return False;
+    end Resolve_Grid;
+
+
+
+
     -- this function transform the Input Grid (the Solution) into a Playable grid with a unique Solution
     function Playable_Grid(g :grid) return grid 
     is
@@ -225,25 +279,136 @@ procedure main is
         end Playable_Grid;
 
           
+    -- this function load a grid from a text file 
+    procedure Get_Grid_From_file(g : in out grid; File_Name :  string)
+    is
+        file : File_Type;
+        c : character;
+        int : Integer;
+        x : Integer:=1;
+        y : Integer:=1;
+        -- this function move the coordonates X and Y foward
+        procedure Move_Foward
+        is
+        begin
+            if x=9 and y=9 then
+                return;
+            elsif x=9 then
+                x:=1;
+                y:=y+1;
+            else 
+                x:=x+1;
+            end if;
+        end Move_Foward;
 
+    begin
+        open(file,In_File,"grid/"&File_Name);
+        while not End_Of_File(file) loop
+            if End_Of_Line(file) then
+                skip_line(file);
+            elsif End_Of_Page(file) then
+                skip_page(file);
+            else
+                get(file,c);
+                if c/=',' and c/=' ' and c/='-' then
+                    begin
+                        int:=Integer'Value(""&c);
+                    exception
+                        when Constraint_Error =>
+                            put_line("invalid file");
+                            return;
+                    end;
+                    if  int>0 and int <10 then
+                        g(y)(x):=(Nb=>int,Visible=>True);
+                        Move_Foward;
+                    else
+                        raise Constraint_Error;
+                        return;
+                    end if;
+                elsif c='-' then
+                    g(y)(x):=(Nb=>1,Visible=>False);
+                    Move_Foward;
+                end if;
+            end if;
+        end loop;
+    exception
+        when Name_Error =>
+            put_line("Invalid File");
+    end Get_Grid_From_file;
+
+    -- This function save the grid in a text file
+    procedure Save_Grid(g : grid; file_Name :  string) is
+        file : File_Type;
+    begin
+        create(File,out_file,"grid/"&File_Name);
+        for y in 1..9 loop
+            for x in 1..9 loop
+                if g(y)(x).visible then
+                    put(file,Integer'Image(g(y)(x).Nb));
+                else
+                    put(file," -");
+                end if;
+                if x/=9 then
+                    put(file,',');
+                end if;
+            end loop;
+            new_line(file);
+        end loop;
+    end Save_Grid;
 
 
     g : grid:=(others => (others=>(Nb=>1,Visible=>False)));
     b :  boolean;
+    rep : string(1..50);
+    last : Natural;
 begin
+    -- Command :  
+    -- generate :  generate a Solution grid
+    -- play : Transfort the grid in memory to a playable grid
+    -- save : save the grid in memory in a text file
+    -- load : load a  grid from a text file
+    -- resolve : resolve a grid
+    -- quit : quit the program without saving anything
     Reset(Rand);
-    b:=Generate_Grid(g,1,1);
-    if b then 
-        Put_line("Solution Grid : ");
-        new_line;
-        Put_line(g);
-        new_line;
-        put_line("Playable_Grid : ");
-        g:=Playable_Grid(g);
-        Put_line(g);
-    else
-        put_line("generation failed...");
-    end if;
+    put(">>");
+    get_line(rep,last);
+    while rep(1..4)/="quit" loop
+        if rep(1..8)="generate" then
+            g:=(others => (others=>(Nb=>1,Visible=>False)));
+            b:=Generate_Grid(g);
+            if b then 
+                Put_line("Solution Grid : ");
+                new_line;
+                Put_line(g);
+            else
+                put_line("generation failed...");
+            end if;
+            new_line;
+        elsif rep(1..4)="play" then
+            put_line("Playable_Grid : ");
+            g:=Playable_Grid(g);
+            Put_line(g);
+            New_line;
+        elsif rep(1..4)="save" then 
+            put("name : ");
+            get_line(rep,last);
+            Save_Grid(g, rep(1..last));
+        elsif rep(1..4)="load" then
+            put("name : ");
+            get_line(rep,last);
+            Get_Grid_From_file(g,rep(1..last));
+            put_line(g);
+        elsif  rep(1..7)="resolve" then
+            if Resolve_Grid(g) then
+                put_line("resolved grid : ");
+                put_line(g);
+            else
+                put_line("resolve failed..");
+            end if;
+        end if;
+        put(">>");
+        get_line(rep,last);
+    end loop;
 end main;
 
 
