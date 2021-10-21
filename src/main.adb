@@ -1,5 +1,6 @@
 With Ada.Text_IO;           use Ada.Text_IO;
 With Ada.Numerics.Discrete_Random;
+with System;
 
 procedure main is 
     -- number that can be put in a suboku Cell
@@ -53,7 +54,7 @@ procedure main is
     end Put_line;
 
 
-    -- This Function return an boolean array of the possible numbers of a sudoku Cell and the number of differents values possibility for this Cell
+    -- This Function returns an boolean array of the possible numbers of a sudoku Cell and the number of differents values possibility for this Cell
     -- It use only visible Cell on the grid
     -- It need the grid, the Cell coordonates, the top left Cell coordonates of the square
     -- Number of possibility musb be a  Natural because it can be 0
