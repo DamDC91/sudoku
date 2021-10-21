@@ -5,6 +5,8 @@
 This simple project is a Sudoku solver that I implemented in Ada.
 The main purpose of this project was to discover and understand backtracking algorithm.
 
+Example of backtracking algorithm
+
 ![Exemple](https://upload.wikimedia.org/wikipedia/commons/8/8c/Sudoku_solved_by_bactracking.gif)
 
 ## Features
